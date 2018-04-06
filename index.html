@@ -1,0 +1,251 @@
+<html>
+<head>
+<style>
+body { font-family:arial; margin:.5in; }
+h1 {  }
+#formContainer { display:flex; justify-content: space-evenly }
+.formLabel { font-weight: bold; }
+.formMessage { font-size:smaller }
+.disclosure{ font-size:larger; text-decoration: none; color:black;}
+ul { list-style-type: none }
+.jsontree_value-wrapper { overflow: hidden }
+</style>
+</head>
+<body>
+
+<div id="formContainer">
+
+<div id="groupContainer"></div>
+
+<div id="tokenContainer"></div>
+
+</div>
+
+<div id="viewer"/>
+
+<script src="https://jonudell.info/hlib/hlib.js"></script>
+
+<script src="https://jonudell.info/hlib/jsonTree.js"></script>
+<link href="https://jonudell.info/hlib/jsonTree.css" rel="stylesheet" />
+
+<script>
+
+// [pull-requests](https://hypothes.is/search?q=tag:%22pull-requests%22)
+// ![](https://pbs.twimg.com/profile_images/378800000115134266/
+// https://hyp.is/SCnZAAGmEeiZjZO4D8EGog/www.example.com/ 
+
+function incrementBy(object, property, amount) {
+  if ( isNaN(object[property])) {
+    object[property] = amount;
+  }
+  else {
+    object[property] += amount;
+  }
+}
+
+function findElements(text, pattern) {
+  var match;
+  var count = 0;
+  while ( (match = pattern.exec(text)) != null ) {
+    count += 1;
+  }
+  return count;
+}
+
+function mean(numbers) {
+    var total = 0, i;
+    for (i = 0; i < numbers.length; i += 1) {
+        total += numbers[i];
+    }
+    return total / numbers.length;
+}
+
+function truncateFloat(flt) {
+  return parseFloat(flt.toFixed(1));  
+}
+
+function activateUrls() {
+  var urls = document.querySelectorAll('.jsontree_value_string');
+  urls.forEach(function(url) {
+    var linkText = url.innerHTML.replace(/"/g,'');
+    var labelText = decodeURIComponent(/url=([^&]+)/.exec(linkText)[1]);
+    url.innerHTML = `<a target="_new" href="${linkText}">${labelText}</a>`;
+  })
+}
+
+function median(numbers) {
+    // median of [3, 5, 4, 4, 1, 1, 2, 3] = 3
+    var median = 0, numsLen = numbers.length;
+    numbers.sort();
+ 
+    if (
+        numsLen % 2 === 0 // is even
+    ) {
+        // average of two middle numbers
+        median = (numbers[numsLen / 2 - 1] + numbers[numsLen / 2]) / 2;
+    } else { // is odd
+        // middle number only
+        median = numbers[(numsLen - 1) / 2];
+    }
+ 
+    return median;
+}
+
+function processAnno(anno){ 
+  var linkPattern = /\[[^]*\(http[^\)]+\)/g;
+  var imagePattern = /\[\]\([^\)]+\)/g;
+  var directLinkPattern = /https:\/\/hyp.is/g;
+
+  anno = parseAnnotation(anno);
+
+  if (! students[anno.user]) {
+    students[anno.user] = {};
+    students[anno.user]['urls'] = [];
+    students[anno.user]['quoteLengths'] = [];
+    students[anno.user]['annotationLengths'] = [];
+    students[anno.user]['replyLengths'] = [];
+  }
+
+  var studentRecord = students[anno.user];
+
+  if ( studentRecord.urls.indexOf(anno.url) === -1 ) {
+    studentRecord.urls.push(anno.url);
+    incrementBy(studentRecord, 'urlsAnnotated', 1);
+  }
+
+  if (! anno.refs.length) {
+    incrementBy(studentRecord, 'annotations', 1);
+    incrementBy(totals, 'totalAnnotations', 1);
+  }
+  else {
+    incrementBy(studentRecord, 'replies', 1);
+    incrementBy(totals, 'totalReplies', 1);
+  }
+
+  var quoteLength = anno.quote.length;
+  incrementBy(studentRecord, 'quoteLength', anno.quote.length);
+  studentRecord.quoteLengths.push(quoteLength);
+
+  if ( anno.isReply ) {
+    var replyLength = anno.text.length;
+    incrementBy(studentRecord, 'replyLength', anno.text.length);
+    studentRecord.replyLengths.push(replyLength);
+  } else {
+    var annotationLength = anno.text.length;
+    incrementBy(studentRecord, 'annotationLength', anno.text.length);
+    studentRecord.annotationLengths.push(annotationLength);
+    annotationLengths.push(annotationLength);
+  }
+
+  incrementBy(studentRecord, 'tagCount', anno.tags.length);
+
+  var imageCount = findElements(anno.text, imagePattern);
+  incrementBy(studentRecord, 'imageCount', imageCount);
+  incrementBy(totals, 'imageCount', imageCount);
+
+  var directLinkCount = findElements(anno.text, directLinkPattern);
+  incrementBy(studentRecord, 'directLinkCount', directLinkCount);
+  incrementBy(totals, 'directLinkCount', directLinkCount);
+
+  var linkCount = findElements(anno.text, linkPattern)
+  incrementBy(studentRecord, 'linkCount', linkCount);
+  incrementBy(totals, 'linkCount', linkCount);
+}
+
+function compileData(annos) {
+  annos.forEach(function(anno) {
+    processAnno(anno)
+  });
+
+  Object.keys(students).forEach(function(student) {
+
+    var studentRecord = students[student];
+
+    var urls = students[student].urls.map(function(url) {
+      var escapedUrl = encodeURIComponent(url);
+      return `https://hyp.is/go?url=${escapedUrl}&q=user:${student}`;
+    });
+
+    studentRecord.urls = urls.sort();
+
+    var quoteLength = studentRecord.quoteLength;
+    var quoteLengths = studentRecord.quoteLengths;
+
+    var annotationLength = studentRecord.annotationLength;
+    var annotationLengths = studentRecord.annotationLengths;
+
+    var replyLength = studentRecord.replyLength;
+    var replyLengths = studentRecord.replyLengths;
+
+    studentRecord.ratioAnnotationLengthToQuoteLength = 
+      truncateFloat(annotationLength / quoteLength);
+
+    studentRecord.meanQuoteLength = truncateFloat(mean(quoteLengths));
+    studentRecord.medianQuoteLength = truncateFloat(median(quoteLengths));
+
+    studentRecord.meanAnnotationLength = truncateFloat(mean(annotationLengths));
+    studentRecord.medianAnnotationLength = truncateFloat(median(annotationLengths));
+
+    if ( replyLengths.length ) {
+      studentRecord.meanReplyLength = truncateFloat(mean(replyLengths));
+      studentRecord.medianReplyLength = truncateFloat(median(replyLengths));
+    }
+
+    delete studentRecord.quoteLengths;
+    delete studentRecord.annotationLengths;
+    delete studentRecord.replyLengths;
+
+  });
+
+
+  json = {
+    "totals": totals,
+    "students": students,
+  };
+
+  var viewer = document.getElementById("viewer");
+
+  var tree = jsonTree.create(json, viewer);
+
+  tree.expand(function(node) {
+   return node;
+  });
+
+  activateUrls();
+}
+
+// main 
+
+//var hUsers = ['Dan_Froomkin'];
+
+var tokenContainer = getById('tokenContainer');
+createApiTokenInputForm(tokenContainer);
+
+var groupContainer = getById('groupContainer');
+createGroupInputForm(groupContainer);
+
+
+var students = {};
+var totals = {};
+var quoteLengths = [];
+var annotationLengths = [];
+var replyLengths = [];
+
+var json;
+
+function processSearchResults(annos) {
+  var featuredId = parseAnnotation(annos[0]).id;
+  var widget = `
+<iframe src="https://hypothes.is/a/${featuredId}" width="100%" height="350px">
+</iframe>`;
+//    getById('featuredId').innerHTML = widget;
+    compileData(annos);
+}
+
+var group = getFromUrlParamOrLocalStorage('h_group', '__world__');
+hApiSearch({group: group}, processSearchResults);
+
+</script>  
+
+</body>
+</html>
