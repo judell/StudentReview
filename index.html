@@ -267,13 +267,8 @@ var replyLengths = [];
 
 var json;
 
-function processSearchResults(annos) {
-  var featuredId = parseAnnotation(annos[0]).id;
-  var widget = `
-<iframe src="https://hypothes.is/a/${featuredId}" width="100%" height="350px">
-</iframe>`;
-//    getById('featuredId').innerHTML = widget;
-    compileData(annos);
+function processSearchResults(annos, replies) {
+    compileData(annos.concat(replies));
 }
 
 var group = getFromUrlParamOrLocalStorage('h_group', '__world__');
