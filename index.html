@@ -1,69 +1,41 @@
 <html>
 <head>
+<script src="https://jonudell.info/hlib/hlib.js"></script>
+<script src="https://jonudell.info/hlib/jsonTree.js"></script>
+<link rel="stylesheet" href="https://jonudell.info/hlib/jsonTree.css">
+<link rel="stylesheet" href="https://jonudell.info/hlib/hlib.css">
 <style>
-body { 
-  font-family:arial; 
-  margin:.5in;
+
+body {
   display: flex;
 }
 
-#formContainer { 
-  display:flex; 
+#formContainer {
+  display: flex;
   flex-direction: column;
-  }
-
-.formLabel { 
-  font-weight: bold; 
-}
-
-.formMessage { 
-  font-size:smaller;
-}
-
-.formField {
-  margin-top: 2px;
-  margin-bottom: 2px;
-}
-
-.disclosure { 
-  font-size:larger; 
-  text-decoration: 
-  none; color:black;
-}
-
-ul { 
-  list-style-type: none;
-}
-
-.inputForm {
-  margin-top: 2px;
-  margin-bottom: 2px;
 }
 
 .jsontree_value-wrapper { 
   overflow: hidden;
 }
 
-button {
-  margin-top: 14px;
-  width: 80px;
+ul  { 
+  list-style-type: none;
 }
+
 </style>
 </head>
 <body>
 
 <div id="formContainer">
-  <div id="groupContainer"></div>
-  <div id="tokenContainer"></div>
-  <button onclick="search()">search</button>
+  <div class="formField" id="groupContainer"></div>
+  <div class="formField" id="tokenContainer"></div>
+  <div class="formField">
+    <button onclick="search()">search</button>
+  </div>
 </div>
 
 <div id="viewer"/>
-
-<script src="https://jonudell.info/hlib/hlib.js"></script>
-
-<script src="https://jonudell.info/hlib/jsonTree.js"></script>
-<link href="https://jonudell.info/hlib/jsonTree.css" rel="stylesheet" />
 
 <script>
 
