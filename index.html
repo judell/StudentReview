@@ -43,16 +43,19 @@ ul {
 .jsontree_value-wrapper { 
   overflow: hidden;
 }
+
+button {
+  margin-top: 14px;
+  width: 80px;
+}
 </style>
 </head>
 <body>
 
 <div id="formContainer">
-
-<div id="groupContainer"></div>
-
-<div id="tokenContainer"></div>
-
+  <div id="groupContainer"></div>
+  <div id="tokenContainer"></div>
+  <button onclick="search()">search</button>
 </div>
 
 <div id="viewer"/>
@@ -125,22 +128,22 @@ function median(numbers) {
     return median;
 }
 
-function processAnno(anno){ 
+function processAnno(anno, data){ 
   var linkPattern = /\[[^]*\(http[^\)]+\)/g;
   var imagePattern = /\[\]\([^\)]+\)/g;
   var directLinkPattern = /https:\/\/hyp.is/g;
 
   anno = parseAnnotation(anno);
 
-  if (! students[anno.user]) {
-    students[anno.user] = {};
-    students[anno.user]['urls'] = [];
-    students[anno.user]['quoteLengths'] = [];
-    students[anno.user]['annotationLengths'] = [];
-    students[anno.user]['replyLengths'] = [];
+  if (! data.data[anno.user]) {
+    data.data[anno.user] = {};
+    data.data[anno.user]['urls'] = [];
+    data.data[anno.user]['quoteLengths'] = [];
+    data.data[anno.user]['annotationLengths'] = [];
+    data.data[anno.user]['replyLengths'] = [];
   }
 
-  var studentRecord = students[anno.user];
+  var studentRecord = data.data[anno.user];
 
   if ( studentRecord.urls.indexOf(anno.url) === -1 ) {
     studentRecord.urls.push(anno.url);
@@ -149,11 +152,9 @@ function processAnno(anno){
 
   if (! anno.refs.length) {
     incrementBy(studentRecord, 'annotations', 1);
-    incrementBy(totals, 'totalAnnotations', 1);
   }
   else {
     incrementBy(studentRecord, 'replies', 1);
-    incrementBy(totals, 'totalReplies', 1);
   }
 
   var quoteLength = anno.quote.length;
@@ -168,34 +169,40 @@ function processAnno(anno){
     var annotationLength = anno.text.length;
     incrementBy(studentRecord, 'annotationLength', anno.text.length);
     studentRecord.annotationLengths.push(annotationLength);
-    annotationLengths.push(annotationLength);
   }
 
   incrementBy(studentRecord, 'tagCount', anno.tags.length);
 
   var imageCount = findElements(anno.text, imagePattern);
   incrementBy(studentRecord, 'imageCount', imageCount);
-  incrementBy(totals, 'imageCount', imageCount);
 
   var directLinkCount = findElements(anno.text, directLinkPattern);
   incrementBy(studentRecord, 'directLinkCount', directLinkCount);
-  incrementBy(totals, 'directLinkCount', directLinkCount);
 
   var linkCount = findElements(anno.text, linkPattern)
   incrementBy(studentRecord, 'linkCount', linkCount);
-  incrementBy(totals, 'linkCount', linkCount);
+
+  data.data[anno.user] = studentRecord;
+ 
+  return data;
 }
 
 function compileData(annos) {
+  var data = {
+    data: {},
+    quoteLengths: {},
+    annotationLengths: {},
+    replyLengths: {},
+}  
   annos.forEach(function(anno) {
-    processAnno(anno)
+    data = Object.assign(data, processAnno(anno, data));
   });
 
-  Object.keys(students).forEach(function(student) {
+  Object.keys(data.data).forEach(function(student) {
 
-    var studentRecord = students[student];
+    var studentRecord = data.data[student];
 
-    var urls = students[student].urls.map(function(url) {
+    var urls = data.data[student].urls.map(function(url) {
       var escapedUrl = encodeURIComponent(url);
       return `https://hyp.is/go?url=${escapedUrl}&q=user:${student}`;
     });
@@ -232,10 +239,7 @@ function compileData(annos) {
   });
 
 
-  json = {
-    "totals": totals,
-    "students": students,
-  };
+  json = data.data;
 
   var viewer = document.getElementById("viewer");
 
@@ -248,31 +252,20 @@ function compileData(annos) {
   activateUrls();
 }
 
-// main 
+function search() {
+  var group = getFromUrlParamOrLocalStorage('h_group', '__world__');
+  hApiSearch({group: group}, processSearchResults);
+}
 
-//var hUsers = ['Dan_Froomkin'];
+function processSearchResults(annos, replies) {
+    compileData(annos.concat(replies));
+}
 
 var tokenContainer = getById('tokenContainer');
 createApiTokenInputForm(tokenContainer);
 
 var groupContainer = getById('groupContainer');
 createGroupInputForm(groupContainer);
-
-
-var students = {};
-var totals = {};
-var quoteLengths = [];
-var annotationLengths = [];
-var replyLengths = [];
-
-var json;
-
-function processSearchResults(annos, replies) {
-    compileData(annos.concat(replies));
-}
-
-var group = getFromUrlParamOrLocalStorage('h_group', '__world__');
-hApiSearch({group: group}, processSearchResults);
 
 </script>  
 
