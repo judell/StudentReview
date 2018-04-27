@@ -225,7 +225,8 @@ function compileData(annos) {
 }
 
 function search() {
-  var group = getFromUrlParamOrLocalStorage('h_group', '__world__');
+  document.getElementById("viewer").innerHTML = '';
+  var group = getSelectedGroup();
   hApiSearch({group: group}, processSearchResults);
 }
 
