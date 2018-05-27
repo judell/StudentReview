@@ -30,6 +30,8 @@ thead {
 
 <div id="csv"></div>
 
+<!-- these functions, used in the form, are assigned from the type="module" script tag, because 
+  the module otherwise is not accessible from the form on this page -->
 <script>
   var search, exportCsv
 </script>
@@ -286,15 +288,14 @@ function processSearchResults(annos, replies) {
   tableView(data)
 }
 
-var tokenContainer = hlib.getById('tokenContainer')
-hlib.createApiTokenInputForm(tokenContainer)
+var tokenContainer = hlib.getById('tokenContainer');
+hlib.createApiTokenInputForm(tokenContainer);
 
-var groupContainer = hlib.getById('groupContainer')
-hlib.createGroupInputForm(groupContainer)
+var groupContainer = hlib.getById('groupContainer');
+hlib.createGroupInputForm(groupContainer);
 
-var maxContainer = hlib.getById('maxContainer')
-hlib.createFacetInputForm(maxContainer, 'max', 'max annotations to fetch')
-
+var maxContainer = hlib.getById('maxContainer');
+hlib.createFacetInputForm(maxContainer, 'max', 'max annotations to fetch');
 
 </script>  
 
