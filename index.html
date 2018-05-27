@@ -1,6 +1,5 @@
 <html>
 <head>
-<script src="https://jonudell.info/hlib/hlib.js"></script>
 <link rel="stylesheet" href="https://jonudell.info/hlib/hlib.css">
 <style>
 #formContainer {
@@ -8,10 +7,10 @@
   flex-direction: column;
 }
 table {
-  border-spacing: 10px;
+  border-spacing: 10px
 }
 thead {
-  font-weight: bold;
+  font-weight: bold
 }
 </style>
 </head>
@@ -32,121 +31,144 @@ thead {
 <div id="csv"></div>
 
 <script>
+  var search, exportCsv
+</script>
+
+<script type="module">
+
+import * as hlib from "http://localhost:8000/hlib.js"
+
+// temp function that uses a module function
+function _search() {
+  var params = {
+    max: document.querySelector('#maxContainer input').value,
+    group: hlib.getSelectedGroup(),
+  }
+  hlib.hApiSearch(params, processSearchResults)
+}
+// assign it to a var in a regular script so in scope with the form
+search = _search;
+
+// see above
+function _exportCsv() {
+  var csv = ''
+  var rows = document.querySelector('table').querySelectorAll('tr')
+  rows.forEach(row => {
+    var cells = [].slice.call(row.querySelectorAll('td'))
+    cells = cells.map(cell => { return `"${cell.innerHTML}"` })
+    cells = cells.join(",")
+    csv += cells + '\n'
+  })
+  hlib.download(csv, 'csv')
+}
+// see above
+exportCsv = _exportCsv
 
 function incrementBy(object, property, amount) {
   if ( isNaN(object[property])) {
-    object[property] = amount;
+    object[property] = amount
   }
   else {
-    object[property] += amount;
+    object[property] += amount
   }
 }
 
 function findElements(text, pattern) {
-  var match;
-  var count = 0;
+  var match
+  var count = 0
   while ( (match = pattern.exec(text)) != null ) {
-    count += 1;
+    count += 1
   }
-  return count;
+  return count
 }
 
 function mean(numbers) {
-    var total = 0, i;
+    var total = 0, i
     for (i = 0; i < numbers.length; i += 1) {
-        total += numbers[i];
+        total += numbers[i]
     }
-    return total / numbers.length;
+    return total / numbers.length
 }
 
 function truncateFloat(flt) {
-  return parseFloat(flt.toFixed(1));  
-}
-
-function activateUrls() {
-  var urls = document.querySelectorAll('.jsontree_value_string');
-  urls.forEach(function(url) {
-    var linkText = url.innerHTML.replace(/"/g,'');
-    var labelText = decodeURIComponent(/url=([^&]+)/.exec(linkText)[1]);
-    url.innerHTML = `<a target="_new" href="${linkText}">${labelText}</a>`;
-  })
+  return parseFloat(flt.toFixed(1))  
 }
 
 function median(numbers) {
     // median of [3, 5, 4, 4, 1, 1, 2, 3] = 3
-    var median = 0, numsLen = numbers.length;
-    numbers.sort();
+    var median = 0, numsLen = numbers.length
+    numbers.sort()
  
     if (
         numsLen % 2 === 0 // is even
     ) {
         // average of two middle numbers
-        median = (numbers[numsLen / 2 - 1] + numbers[numsLen / 2]) / 2;
+        median = (numbers[numsLen / 2 - 1] + numbers[numsLen / 2]) / 2
     } else { // is odd
         // middle number only
-        median = numbers[(numsLen - 1) / 2];
+        median = numbers[(numsLen - 1) / 2]
     }
  
-    return median;
+    return median
 }
 
 function processAnno(anno, data) { 
-  var linkPattern = /\[[^]*\(http[^\)]+\)/g;
-  var imagePattern = /\[\]\([^\)]+\)/g;
-  var directLinkPattern = /https:\/\/hyp.is/g;
+  var linkPattern = /\[[^]*\(http[^\)]+\)/g
+  var imagePattern = /\[\]\([^\)]+\)/g
+  var directLinkPattern = /https:\/\/hyp.is/g
 
-  anno = parseAnnotation(anno);
+  anno = hlib.parseAnnotation(anno)
 
   if (! data[anno.user]) {
-    data[anno.user] = {};
-    data[anno.user]['urls'] = [];
-    data[anno.user]['quoteLengths'] = [];
-    data[anno.user]['annotationLengths'] = [];
-    data[anno.user]['replyLengths'] = [];
+    data[anno.user] = {}
+    data[anno.user]['urls'] = []
+    data[anno.user]['quoteLengths'] = []
+    data[anno.user]['annotationLengths'] = []
+    data[anno.user]['replyLengths'] = []
   }
 
-  var studentRecord = data[anno.user];
+  var studentRecord = data[anno.user]
 
   if ( studentRecord.urls.indexOf(anno.url) === -1 ) {
-    studentRecord.urls.push(anno.url);
-    incrementBy(studentRecord, 'urlsAnnotated', 1);
+    studentRecord.urls.push(anno.url)
+    incrementBy(studentRecord, 'urlsAnnotated', 1)
   }
 
   if (! anno.refs.length) {
-    incrementBy(studentRecord, 'annotations', 1);
+    incrementBy(studentRecord, 'annotations', 1)
   }
   else {
-    incrementBy(studentRecord, 'replies', 1);
+    incrementBy(studentRecord, 'replies', 1)
   }
 
-  var quoteLength = anno.quote.length;
-  incrementBy(studentRecord, 'quoteLength', anno.quote.length);
-  studentRecord.quoteLengths.push(quoteLength);
+  var quoteLength = anno.quote.length
+  incrementBy(studentRecord, 'quoteLength', anno.quote.length)
+  studentRecord.quoteLengths.push(quoteLength)
 
   if ( anno.isReply ) {
-    var replyLength = anno.text.length;
-    incrementBy(studentRecord, 'replyLength', anno.text.length);
-    studentRecord.replyLengths.push(replyLength);
+    var replyLength = anno.text.length
+    incrementBy(studentRecord, 'replyLength', anno.text.length)
+    studentRecord.replyLengths.push(replyLength)
   } else {
-    var annotationLength = anno.text.length;
-    incrementBy(studentRecord, 'annotationLength', anno.text.length);
-    studentRecord.annotationLengths.push(annotationLength);
+    var annotationLength = anno.text.length
+    incrementBy(studentRecord, 'annotationLength', anno.text.length)
+    studentRecord.annotationLengths.push(annotationLength)
   }
 
-  incrementBy(studentRecord, 'tagCount', anno.tags.length);
+  incrementBy(studentRecord, 'tagCount', anno.tags.length)
 
-  var imageCount = findElements(anno.text, imagePattern);
-  incrementBy(studentRecord, 'imageCount', imageCount);
+  var imageCount = findElements(anno.text, imagePattern)
+  incrementBy(studentRecord, 'imageCount', imageCount)
 
-  var directLinkCount = findElements(anno.text, directLinkPattern);
-  incrementBy(studentRecord, 'directLinkCount', directLinkCount);
+  var directLinkCount = findElements(anno.text, directLinkPattern)
+  incrementBy(studentRecord, 'directLinkCount', directLinkCount)
 
   var linkCount = findElements(anno.text, linkPattern)
-  incrementBy(studentRecord, 'linkCount', linkCount);
+  incrementBy(studentRecord, 'linkCount', linkCount)
 
-  data[anno.user] = studentRecord;
+  data[anno.user] = studentRecord
  
-  return data;
+  return data
 }
 
 function compileData(annos) {
@@ -174,8 +196,8 @@ data["Username"] = {
 }
 */
   annos.forEach(function(anno) {
-    data = Object.assign(data, processAnno(anno, data));
-  });
+    data = Object.assign(data, processAnno(anno, data))
+  })
 
 /*
   In phase 2, run aggregate analysis on the per-student lists. The per-student records are
@@ -188,119 +210,90 @@ data["Username"] = {
 */
   Object.keys(data).forEach(function(student) {
 
-    var studentRecord = data[student];
+    var studentRecord = data[student]
 
-    fields = Object.keys(studentRecord);
+    let fields = Object.keys(studentRecord)
 
     var urls = data[student].urls.map(function(url) {
-      var escapedUrl = encodeURIComponent(url);
-      return `https://hyp.is/go?url=${escapedUrl}&q=user:${student}`;
-    });
+      var escapedUrl = encodeURIComponent(url)
+      return `https://hyp.is/go?url=${escapedUrl}&q=user:${student}`
+    })
 
-    studentRecord.urls = urls.sort();
+    studentRecord.urls = urls.sort()
 
-    var quoteLength = studentRecord.quoteLength;
-    var quoteLengths = studentRecord.quoteLengths;
+    var quoteLength = studentRecord.quoteLength
+    var quoteLengths = studentRecord.quoteLengths
 
-    var annotationLength = studentRecord.annotationLength;
-    var annotationLengths = studentRecord.annotationLengths;
+    var annotationLength = studentRecord.annotationLength
+    var annotationLengths = studentRecord.annotationLengths
 
-    var replyLength = studentRecord.replyLength;
-    var replyLengths = studentRecord.replyLengths;
+    var replyLength = studentRecord.replyLength
+    var replyLengths = studentRecord.replyLengths
 
     studentRecord.ratioAnnotationLengthToQuoteLength = 
-      truncateFloat(annotationLength / quoteLength);
+      truncateFloat(annotationLength / quoteLength)
 
-    studentRecord.meanQuoteLength = truncateFloat(mean(quoteLengths));
-    studentRecord.medianQuoteLength = truncateFloat(median(quoteLengths));
+    studentRecord.meanQuoteLength = truncateFloat(mean(quoteLengths))
+    studentRecord.medianQuoteLength = truncateFloat(median(quoteLengths))
 
-    studentRecord.meanAnnotationLength = truncateFloat(mean(annotationLengths));
-    studentRecord.medianAnnotationLength = truncateFloat(median(annotationLengths));
+    studentRecord.meanAnnotationLength = truncateFloat(mean(annotationLengths))
+    studentRecord.medianAnnotationLength = truncateFloat(median(annotationLengths))
 
     if ( replyLengths.length ) {
-      studentRecord.meanReplyLength = truncateFloat(mean(replyLengths));
-      studentRecord.medianReplyLength = truncateFloat(median(replyLengths));
+      studentRecord.meanReplyLength = truncateFloat(mean(replyLengths))
+      studentRecord.medianReplyLength = truncateFloat(median(replyLengths))
     }
 
-    delete studentRecord.quoteLengths;
-    delete studentRecord.annotationLengths;
-    delete studentRecord.replyLengths;
+    delete studentRecord.quoteLengths
+    delete studentRecord.annotationLengths
+    delete studentRecord.replyLengths
 
-  });
+  })
 
-  return data;
+  return data
 
-}
-
-function search() {
-  var params = {
-    max: document.querySelector('#maxContainer input').value,
-    group: getSelectedGroup(),
-  }
-  hApiSearch(params, processSearchResults);
 }
 
 function tableView(data) {
-  var users = Object.keys(data);
-  var fieldNames = Object.keys(data[users[0]]);
+  var users = Object.keys(data)
+  var fieldNames = Object.keys(data[users[0]])
   fieldNames = fieldNames.filter(f => { // list only useful in tree view
-    return f != 'urls';
-  });
-  fieldNames.sort();
-  var headers = fieldNames.join('</td><td>');
-  var html = `<table><thead><tr><td></td><td>${headers}</td></tr></thead><tbody>\n`;
+    return f != 'urls'
+  })
+  fieldNames.sort()
+  var headers = fieldNames.join('</td><td>')
+  var html = `<table><thead><tr><td></td><td>${headers}</td></tr></thead><tbody>\n`
 
   users.forEach(user => {
-    var field = data[user];
-    var fieldValues = [user];
+    var field = data[user]
+    var fieldValues = [user]
     fieldNames.forEach(fieldName => {
       fieldValues.push(field[fieldName])
-    });
-    var row = fieldValues.join('</td><td>');
-    html += `<tr><td>${row}</td></tr>\n`;
+    })
+    var row = fieldValues.join('</td><td>')
+    html += `<tr><td>${row}</td></tr>\n`
   })
 
-  html += '</tbody></table>';
-  getById('tableViewer').innerHTML = html;
-}
-
-function exportCsv() {
-  var csv = '';
-  var rows = document.querySelector('table').querySelectorAll('tr');
-  rows.forEach(row => {
-    var cells = [].slice.call(row.querySelectorAll('td'));
-    cells = cells.map(cell => { return `"${cell.innerHTML}"` });
-    cells = cells.join(",");
-    csv += cells + '\n';
-  });
-  download(csv, 'csv');
+  html += '</tbody></table>'
+  hlib.getById('tableViewer').innerHTML = html
 }
 
 function processSearchResults(annos, replies) {
-  var data = compileData(annos.concat(replies));
+  var data = compileData(annos.concat(replies))
 
-/*
-  var treeViewer = getById("treeViewer");
-  var tree = jsonTree.create(data, treeViewer);
-  tree.expand(function(node) {
-    return node;
-  });
-  activateUrls();
-  */
+  var tableViewer = hlib.getById("tableViewer")
 
-  var tableViewer = getById("tableViewer");
-
-  tableView(data);
+  tableView(data)
 }
 
-var tokenContainer = getById('tokenContainer');
-createApiTokenInputForm(tokenContainer);
+var tokenContainer = hlib.getById('tokenContainer')
+hlib.createApiTokenInputForm(tokenContainer)
 
-var groupContainer = getById('groupContainer');
-createGroupInputForm(groupContainer);
+var groupContainer = hlib.getById('groupContainer')
+hlib.createGroupInputForm(groupContainer)
 
-var maxContainer = getById('maxContainer');
-createFacetInputForm(maxContainer, 'max', 'max annotations to fetch');
+var maxContainer = hlib.getById('maxContainer')
+hlib.createFacetInputForm(maxContainer, 'max', 'max annotations to fetch')
 
 
 </script>  
