@@ -30,29 +30,19 @@ thead {
 
 <div id="csv"></div>
 
-<!-- these functions, used in the form, are assigned from the type="module" script tag, because 
-  the module otherwise is not accessible from the form on this page -->
+<script src="https://jonudell.info/hlib/hlib.bundle.js"></script>
+
 <script>
-  var search, exportCsv
-</script>
 
-<script type="module">
-
-import * as hlib from "http://localhost:8000/hlib.js"
-
-// temp function that uses a module function
-function _search() {
+function search() {
   var params = {
     max: document.querySelector('#maxContainer input').value,
     group: hlib.getSelectedGroup(),
   }
   hlib.hApiSearch(params, processSearchResults)
 }
-// assign it to a var in a regular script so in scope with the form
-search = _search;
 
-// see above
-function _exportCsv() {
+function exportCsv() {
   var csv = ''
   var rows = document.querySelector('table').querySelectorAll('tr')
   rows.forEach(row => {
@@ -63,8 +53,6 @@ function _exportCsv() {
   })
   hlib.download(csv, 'csv')
 }
-// see above
-exportCsv = _exportCsv
 
 function incrementBy(object, property, amount) {
   if ( isNaN(object[property])) {
